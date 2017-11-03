@@ -85,6 +85,8 @@ def main():
                         help='disables CUDA training')
     parser.add_argument('--model', '-m', default='',
                         help='Give a model to test')
+    parser.add_argument('--train-plot', action='store_true', default=False,
+                        help='Plot train loss')
     args = parser.parse_args()
     args.cuda = not args.no_cuda and torch.cuda.is_available()
     print("Args: %s" % args)
@@ -123,6 +125,11 @@ def main():
     momentum = 0.9
     # Loss and Optimizer
     criterion = ContrastiveLoss()
+    # optimizer = torch.optim.Adam(
+    #     [p for p in model.parameters() if p.requires_grad],
+    #     lr=learning_rate
+    # )
+
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate,
                                 momentum=momentum)
 
@@ -136,6 +143,7 @@ def main():
         batch_size=args.batchsize, shuffle=True, **kwargs)
 
     def train(epoch):
+        train_loss = []
         model.train()
         start = time.time()
         start_epoch = time.time()
@@ -146,6 +154,7 @@ def main():
             x0, x1, labels = Variable(x0), Variable(x1), Variable(labels)
             output1, output2 = model(x0, x1)
             loss = criterion(output1, output2, labels)
+            train_loss.append(loss.data[0])
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -160,6 +169,7 @@ def main():
         end = time.time()
         took = end - start_epoch
         print('Train epoch: {} \tTook:{:.2f}'.format(epoch, took))
+        return train_loss
 
     def test(model):
         model.eval()
@@ -189,8 +199,18 @@ def main():
         plt.savefig('result.png')
 
     if len(args.model) == 0:
+        train_loss = []
         for epoch in range(1, args.epoch + 1):
-            train(epoch)
+            train_loss.extend(train(epoch))
+
+        if args.train_plot:
+            plt.gca().cla()
+            plt.plot(train_loss, label="train loss")
+            plt.legend()
+            plt.draw()
+            plt.savefig('train_loss.png')
+            plt.gca().clear()
+
     else:
         saved_model = torch.load(args.model)
         model = SiameseNetwork()
