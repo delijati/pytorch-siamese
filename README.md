@@ -25,3 +25,8 @@ This dumps for every epoch ther current `state` and creates a `result.png`.
 ```
 $ env/bin/python train_mnist.py -m model-epoch-7.pth
 ```
+
+## Result
+
+![](https://raw.githubusercontent.com/delijati/pytorch-siamese/master/result.png)
+
