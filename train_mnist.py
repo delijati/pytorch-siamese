@@ -44,8 +44,8 @@ def create_pairs(data, digit_indices):
             z1, z2 = digit_indices[d][i], digit_indices[d][i + 1]
             # scale data to 0-1
             # XXX this does ToTensor also
-            x0_data.append(data[z1] / 255)
-            x1_data.append(data[z2] / 255)
+            x0_data.append(data[z1] / 255.0)
+            x1_data.append(data[z2] / 255.0)
             label.append(1)
 
             # make pairs of different classes
@@ -56,8 +56,8 @@ def create_pairs(data, digit_indices):
             z1, z2 = digit_indices[d][i], digit_indices[dn][i]
             # scale data to 0-1
             # XXX this does ToTensor also
-            x0_data.append(data[z1] / 255)
-            x1_data.append(data[z2] / 255)
+            x0_data.append(data[z1] / 255.0)
+            x1_data.append(data[z2] / 255.0)
             label.append(0)
 
     x0_data = np.array(x0_data, dtype=np.float32)
@@ -158,12 +158,22 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
+            accuracy = []
+
+            for idx, logit in enumerate([output1, output2]):
+                corrects = (torch.max(logit, 1)[1].data == labels.long().data).sum()
+                accu = float(corrects) / float(labels.size()[0])
+                accuracy.append(accu)
+
             if batch_idx % args.batchsize == 0:
                 end = time.time()
                 took = end - start
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}\tTook: {:.2f}'.format(
-                    epoch, batch_idx * len(labels), len(train_loader.dataset),
-                    100. * batch_idx / len(train_loader), loss.data[0], took))
+                for idx, accu in enumerate(accuracy):
+                    print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss:{:.6f}\tTook: {:.2f}\tOut: {}\tAccu: {:.2f}'.format(
+                        epoch, batch_idx * len(labels), len(train_loader.dataset),
+                        100. * batch_idx / len(train_loader), loss.data[0],
+                        took, idx, accu * 100.))
                 start = time.time()
         torch.save(model.state_dict(), './model-epoch-%s.pth' % epoch)
         end = time.time()
