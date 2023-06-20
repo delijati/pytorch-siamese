@@ -11,6 +11,7 @@ from net import SiameseNetwork
 from contrastive import ContrastiveLoss
 from torch.autograd import Variable
 from torchvision import transforms
+from torch.utils.data import DataLoader
 
 
 class Dataset(object):
@@ -130,7 +131,8 @@ def main():
     #     lr=learning_rate
     # )
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate,
+    optimizer = torch.optim.SGD(model.parameters(),
+                                lr=learning_rate,
                                 momentum=momentum)
 
     kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
@@ -154,7 +156,7 @@ def main():
             x0, x1, labels = Variable(x0), Variable(x1), Variable(labels)
             output1, output2 = model(x0, x1)
             loss = criterion(output1, output2, labels)
-            train_loss.append(loss.data[0])
+            train_loss.append(loss.data.item())
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -170,7 +172,9 @@ def main():
                 end = time.time()
                 took = end - start
                 for idx, accu in enumerate(accuracy):
-                    print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss:{:.6f}\tTook: {:.2f}\tOut: {}\tAccu: {:.2f}'.format(
+                    print('Train Epoch: {} [{}/{} ({:.0f}%)]\t'
+                          'Loss:{:.6f}\tTook: {:.2f}\t'
+                          'Out: {}\tAccu: {:.2f}'.format(
                         epoch, batch_idx * len(labels), len(train_loader.dataset),
                         100. * batch_idx / len(train_loader), loss.data[0],
                         took, idx, accu * 100.))

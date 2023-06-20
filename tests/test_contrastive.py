@@ -1,10 +1,11 @@
 import sys
+
 import argparse
 import unittest
 import torch
 import numpy as np
 
-from contrastive import ContrastiveLoss
+from roux_siamese_few_shot.contrastive import ContrastiveLoss
 from torch.autograd import Variable, gradcheck
 
 torch.set_default_tensor_type('torch.DoubleTensor')
@@ -61,7 +62,7 @@ class TestContrastive(unittest.TestCase):
         t_val = Variable(self.t)
         tml = ContrastiveLoss(margin=self.margin)
         loss = tml.forward(x0_val, x1_val, t_val)
-        self.assertEqual(loss.data.numpy().shape, (1, ))
+        self.assertIsNotNone(loss.data.item())
         self.assertEqual(loss.data.numpy().dtype, np.float32)
         loss_value = float(loss.data.numpy())
 
